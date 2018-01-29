@@ -1,0 +1,6 @@
+posiapp/__init__.py
+posiapp/__main__.py
+posiapp.egg-info/PKG-INFO
+posiapp.egg-info/SOURCES.txt
+posiapp.egg-info/dependency_links.txt
+posiapp.egg-info/top_level.txt
