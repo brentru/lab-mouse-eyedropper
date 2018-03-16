@@ -79,14 +79,14 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
-       <widget class="QPushButton" name="pushButton_25">
+       <widget class="QPushButton" name="btn_syr_in">
         <property name="text">
          <string>Towards Mouse</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_26">
+       <widget class="QPushButton" name="btn_syr_out">
         <property name="text">
          <string>Away from Mouse</string>
         </property>
@@ -241,14 +241,14 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_8">
       <item>
-       <widget class="QPushButton" name="pushButton_27">
+       <widget class="QPushButton" name="btn_platform_right">
         <property name="text">
          <string>Rotate Right</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_28">
+       <widget class="QPushButton" name="btn_platform_left">
         <property name="text">
          <string>Rotate Left</string>
         </property>

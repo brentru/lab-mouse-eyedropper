@@ -1,5 +1,5 @@
 """
-Marlin Firmware GCode Streaming Script for Python 3
+GCode Sender for Python3 + PySerial + Marlin Firmware
 
 ---
 derivative of simplestream.py for GRBL firmware (https://github.com/grbl/grbl/blob/master/doc/script/simple_stream.py)
@@ -27,15 +27,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 """
+import os
 import serial
 import time
-import os
 
-# predefined serial port
-PORT = '/dev/tty.wchusbserial14140'
+# machine serial port
+PORT = '/dev/cu.wchusbserial14210'
+BAUD = 250000
 
 # serial setup
-s = serial.Serial(PORT, 115200)
+s = serial.Serial(PORT, BAUD)
 
 # wake up the serial
 s.write(("\n\r\n\r\n\r".encode()))
@@ -48,14 +49,14 @@ if s is not None:
 else:
     s.close()
 
-l = input("GCODE: ")
+l = "G0 X30"
 
 l = l + "\n"
-l.encode()
 print('Sending: ' + l + "...")
-s.write(l.encode()) # Send g-code block to grbl
-grbl_out = s.readline() # Wait for grbl response with carriage return
-print ('* DBG, MACHINE OUTPUT:' + grbl_out.decode())
+s.write(l.encode())
+# wait for marlin response
+machine_out = s.readline()
+print ('* DBG, MACHINE OUTPUT:' + machine_out.decode())
 
 # close serial port
 s.close()
