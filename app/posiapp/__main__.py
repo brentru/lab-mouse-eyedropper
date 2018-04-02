@@ -17,6 +17,7 @@ IS_CONNECTED = 0
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
+        """init the main window"""
         super(MainWindow, self).__init__()
         self.setupUi(self)
         self.image = None
@@ -26,35 +27,52 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.connect_btns_controls()
 
 
-    def screenshot_webcam_1(self):
-        #todo: fix, doesnt read image in displayImage
-        ret, frame = cap2.read()
-        cv2.imwrite("cam1.png", frame)
-        print('-- captured screenshot')
-        cap2.release()
+    def take_screenshot(self, camera=0):
+        """ grabs the current capture frame
+        @int camera: 0 = off, 1 = cam1, 2 = cam2
+        """
+        if camera == 1:
+            ret, self.screenshot = self.cam1_capture.read()
+        elif camera == 2:
+            ret, self.screenshot = self.cam2_capture.read()
+        else:
+            print('-- ERR: no camera found')
+            pass
+        self.screenshot = cv2.flip(self.screenshot, 1)
+        self.label_display(self.screenshot, 1)
+
+
+        # TODO: change imwrite to take in datetime + camera used
+        curr_time = time.localtime()
+        cv2.imwrite("camera.png", self.screenshot)
+        print('-- screenshot captured')
+
 
     def start_webcam_1(self):
         """webcam 1 capture setup and config"""
-        self.capture = cv2.VideoCapture(0)
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
+        self.cam1_capture = cv2.VideoCapture(0)
+        self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
         self.lbl_cam_1_activity.setText("LIVE")
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(250)
 
+
     def update_frame(self):
         """starts capture, every (timer)ms"""
-        ret, self.image = self.capture.read()
+        ret, self.image = self.cam1_capture.read()
         self.image = cv2.flip(self.image, 1)
-        self.displayImage(self.image, 1)
+        self.label_display(self.image, 1)
+
 
     def stop_webcam_1(self):
         """stops webcam1 from displaying image frames"""
         self.lbl_cam_1_activity.setText("idle")
         self.timer.stop()
 
-    def displayImage(self, img, window=1):
+
+    def label_display(self, img, window=1):
         """image manipulation for label display"""
         qformat = QImage.Format_Indexed8
         if len(img.shape) == 3:
@@ -69,6 +87,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.lbl_cam1.setPixmap(QPixmap.fromImage(out_image))
             self.lbl_cam1.setScaledContents(True)
 
+
     def connect_btns_controls(self):
         """connects non-axis-specific buttons to slots"""
         self.btn_refresh_ports.clicked.connect(self.list_serial_ports)
@@ -77,7 +96,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # vision system
         self.btn_cam1_start.clicked.connect(self.start_webcam_1)
         self.btn_cam1_stop.clicked.connect(self.stop_webcam_1)
-        self.btn_cam1_screenshot.clicked.connect(self.screenshot_webcam_1)
+        self.btn_cam1_screenshot.clicked.connect(lambda: self.take_screenshot(1))
+
 
     def conn_btn_axis(self):
         """connects axis-specific buttons to slots"""
@@ -162,6 +182,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 class ApplicationActions():
+    """generalized application controls and handlers"""
     def exit():
         sys.exit(app.exec_())
 
