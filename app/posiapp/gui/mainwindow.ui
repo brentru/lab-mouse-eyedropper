@@ -523,7 +523,7 @@
       <string>start</string>
      </property>
     </widget>
-    <widget class="QPushButton" name="btn_cam1_stop">
+    <widget class="QPushButton" name="btn_cam1_pause">
      <property name="geometry">
       <rect>
        <x>110</x>
@@ -533,7 +533,7 @@
       </rect>
      </property>
      <property name="text">
-      <string>stop</string>
+      <string>pause</string>
      </property>
     </widget>
     <widget class="QPushButton" name="btn_cam1_screenshot">

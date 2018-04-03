@@ -63,13 +63,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """starts capture, every (timer)ms"""
         ret, self.image = self.cam1_capture.read()
         self.image = cv2.flip(self.image, 1)
+
+        # displaying gridlines
+        image_x = int(self.image.shape[1])
+        image_y = int(self.image.shape[0])
+        # vertical center
+        cv2.line(self.image, (int(image_x/2), 0), (int(image_x/2), image_y), (255, 50, 50), 10, 1)
+        # vertical left
+        cv2.line(self.image, (int(image_x/4), 0), (int(image_x/4), image_y), (255, 50, 50), 10, 1)
+
+        cv2.line(self.image, (0, int(image_y/2)), (image_x, int(image_y/2)), (255, 50, 50), 10, 1)
+        cv2.line(self.image, (0, int(image_y/8)), (image_x, int(image_y/8)), (255, 50, 50), 10, 1)
+        cv2.line(self.image, (0, int(image_y-150)), (image_x, int(image_y-150)), (255, 50, 50), 10, 1)
+
         self.label_display(self.image, 1)
 
 
-    def stop_webcam_1(self):
-        """stops webcam1 from displaying image frames"""
-        self.lbl_cam_1_activity.setText("idle")
-        self.timer.stop()
+    def pause_webcam(self, webcam=0):
+        """stops timer and unloads opencv instance"""
+        if webcam == 1:
+            self.timer.stop()
+            self.cam1_capture.release()
+        elif webcam == 2:
+            print('cam2')
+        else:
+            print('cam not recognized')
+            pass
 
 
     def label_display(self, img, window=1):
@@ -83,6 +102,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         out_image = QImage(img, img.shape[1], img.shape[0], img.strides[0], qformat)
         out_image = out_image.rgbSwapped()
 
+        # draw gridlines on out_image
+
+
         if window == 1:
             self.lbl_cam1.setPixmap(QPixmap.fromImage(out_image))
             self.lbl_cam1.setScaledContents(True)
@@ -95,7 +117,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_quit.clicked.connect(self.dc_and_exit)
         # vision system
         self.btn_cam1_start.clicked.connect(self.start_webcam_1)
-        self.btn_cam1_stop.clicked.connect(self.stop_webcam_1)
+        self.btn_cam1_pause.clicked.connect(lambda: self.pause_webcam(1))
         self.btn_cam1_screenshot.clicked.connect(lambda: self.take_screenshot(1))
 
 
