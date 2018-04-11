@@ -11,8 +11,53 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from .gui.mainwindow_ui import Ui_MainWindow
 
 # consts
-BAUD = 250000
 IS_CONNECTED = 0
+
+class SerCtrl:
+    """PySerial communication"""
+    def __init__(self, baudrate=250000, timeout=5):
+        port_list = [port.device for port in serial.tools.list_ports.comports()]
+        print(">    serial ports: ", port_list)
+        # set up serial
+        self.ser = serial.Serial()
+        try:
+            self.ser.port = port_list[1]
+        except IndexError:
+            print("serial port out of range")
+        self.ser.baudrate = baudrate
+        print(">    serial connected to ", self.ser.port, "at ", self.ser.baudrate)
+        print(self.ser)
+
+    def open(self):
+        """opens the serial port"""
+        print(">    opening serial...")
+        try:
+            self.ser.open()
+            print(">    serial connect opened")
+        except:
+            print(">    ERROR: serial not opened")
+
+    def close(self):
+        """safely close the serial port"""
+        self.ser.close()
+        print(">    serial closed")
+
+    def write(self, data):
+        """send encoded data"""
+        data = data + "\n"
+        self.ser.write(data.encode())
+        print(">    wrote data to serial")
+
+
+    def read(self):
+        """reads 100b from serial"""
+        print(self.ser.read(100))
+
+
+    def read_line(self):
+        """reads line of data from serial, prevents blocking"""
+        line = self.ser.readline()
+        print(">    Serial: ", line.decode())
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -20,11 +65,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """init the main window"""
         super(MainWindow, self).__init__()
         self.setupUi(self)
+        # image setup
         self.image = None
         # connect primary axis control buttons
         self.conn_btn_axis()
         # connect control buttons
         self.connect_btns_controls()
+
+        # create a serial object
+        self.serialObject = SerCtrl()
+        self.serialObject.open()
+        self.serialObject.write("\n\r\n\r\n")
+        time.sleep(3)
+        self.serialObject.read_line()
+        self.serialObject.write("G91")
+
 
 
     def take_screenshot(self, camera=0):
@@ -48,22 +103,49 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print('-- screenshot captured')
 
 
-    def start_webcam_1(self):
-        """webcam 1 capture setup and config"""
-        self.cam1_capture = cv2.VideoCapture(0)
-        self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
-        self.lbl_cam_1_activity.setText("LIVE")
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(250)
+    def pause_webcam(self, webcam=0):
+        """stops timer and unloads opencv instance"""
+        if webcam == 1:
+            self.timer1.stop()
+            self.cam1_capture.release()
+        elif webcam == 2:
+            self.timer2.stop()
+            self.cam2_capture.release()
+        else:
+            print('cam not recognized')
+            pass
+
+
+    def start_webcam(self, camera=0):
+        """ camera capture setup and configuration
+        @int camera: 0 = off, 1 = cam1, 2 = cam2
+        """
+        if camera == 1:
+            self.cam1_capture = cv2.VideoCapture(1)
+            self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
+            self.lbl_cam_1_activity.setText("LIVE")
+            self.timer1 = QTimer(self)
+            print('--started timer1')
+            self.timer1.timeout.connect(self.update_frame)
+            self.timer1.start(250)
+        elif camera == 2:
+            self.cam2_capture = cv2.VideoCapture(2)
+            self.cam2_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.cam2_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
+            #self.lbl_cam_2_activity.setText("LIVE")
+            self.timer2 = QTimer(self)
+            self.timer2.timeout.connect(self.update_frame_2)
+            self.timer2.start(250)
+        else:
+            print('-- camera not detected')
+            pass
 
 
     def update_frame(self):
-        """starts capture, every (timer)ms"""
+        """CAM1: starts capture, every (timer)ms"""
         ret, self.image = self.cam1_capture.read()
         self.image = cv2.flip(self.image, 1)
-
         # displaying gridlines
         image_x = int(self.image.shape[1])
         image_y = int(self.image.shape[0])
@@ -71,24 +153,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cv2.line(self.image, (int(image_x/2), 0), (int(image_x/2), image_y), (255, 50, 50), 10, 1)
         # vertical left
         cv2.line(self.image, (int(image_x/4), 0), (int(image_x/4), image_y), (255, 50, 50), 10, 1)
-
         cv2.line(self.image, (0, int(image_y/2)), (image_x, int(image_y/2)), (255, 50, 50), 10, 1)
         cv2.line(self.image, (0, int(image_y/8)), (image_x, int(image_y/8)), (255, 50, 50), 10, 1)
         cv2.line(self.image, (0, int(image_y-150)), (image_x, int(image_y-150)), (255, 50, 50), 10, 1)
-
         self.label_display(self.image, 1)
 
-
-    def pause_webcam(self, webcam=0):
-        """stops timer and unloads opencv instance"""
-        if webcam == 1:
-            self.timer.stop()
-            self.cam1_capture.release()
-        elif webcam == 2:
-            print('cam2')
-        else:
-            print('cam not recognized')
-            pass
+    def update_frame_2(self):
+        """CAM2: starts capture, every (timer)ms"""
+        ret, self.image = self.cam2_capture.read()
+        self.image = cv2.flip(self.image, 1)
+        # displaying gridlines
+        image_x = int(self.image.shape[1])
+        image_y = int(self.image.shape[0])
+        # vertical center
+        cv2.line(self.image, (int(image_x/2), 0), (int(image_x/2), image_y), (255, 50, 50), 10, 1)
+        # vertical left
+        cv2.line(self.image, (int(image_x/4), 0), (int(image_x/4), image_y), (255, 50, 50), 10, 1)
+        cv2.line(self.image, (0, int(image_y/2)), (image_x, int(image_y/2)), (255, 50, 50), 10, 1)
+        cv2.line(self.image, (0, int(image_y/8)), (image_x, int(image_y/8)), (255, 50, 50), 10, 1)
+        cv2.line(self.image, (0, int(image_y-150)), (image_x, int(image_y-150)), (255, 50, 50), 10, 1)
+        # switch this to the cam2 label
+        self.label_display(self.image, 2)
 
 
     def label_display(self, img, window=1):
@@ -101,25 +186,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 qformat = QImage.Format_RGB888
         out_image = QImage(img, img.shape[1], img.shape[0], img.strides[0], qformat)
         out_image = out_image.rgbSwapped()
-
-        # draw gridlines on out_image
-
-
         if window == 1:
             self.lbl_cam1.setPixmap(QPixmap.fromImage(out_image))
             self.lbl_cam1.setScaledContents(True)
+        elif window == 2:
+            self.lbl_cam2.setPixmap(QPixmap.fromImage(out_image))
+            self.lbl_cam2.setScaledContents(True)
 
 
     def connect_btns_controls(self):
         """connects non-axis-specific buttons to slots"""
-        self.btn_refresh_ports.clicked.connect(self.list_serial_ports)
-        self.btn_conn.clicked.connect(self.connect_machine)
+        # serial-based buttons
         self.btn_quit.clicked.connect(self.dc_and_exit)
-        # vision system
-        self.btn_cam1_start.clicked.connect(self.start_webcam_1)
+        self.btn_estop.clicked.connect(self.emergency_stop)
+        self.btn_disconnect.clicked.connect(self.dc_serial)
+        # vision system: camera 1
+        self.btn_cam1_start.clicked.connect(lambda: self.start_webcam(1))
         self.btn_cam1_pause.clicked.connect(lambda: self.pause_webcam(1))
         self.btn_cam1_screenshot.clicked.connect(lambda: self.take_screenshot(1))
-
+        # vision system: camera 2
+        self.btn_cam2_start.clicked.connect(lambda: self.start_webcam(2))
+        self.btn_cam2_pause.clicked.connect(lambda: self.pause_webcam(2))
+        self.btn_cam2_screenshot.clicked.connect(lambda: self.take_screenshot(2))
 
     def conn_btn_axis(self):
         """connects axis-specific buttons to slots"""
@@ -141,65 +229,41 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """identifies axis and sends ID to gcode sender"""
         if axis == 'xRight':
             print("moving x axis right")
+            self.serialObject.write("G1 X1 F600")
+            self.serialObject.read_line()
         elif axis == 'xLeft':
             print("moving x axis left")
+            self.serialObject.write("G1 X-1 F600")
+            self.serialObject.read_line()
         elif axis == 'yUp':
             print("moving y axis up")
+            self.serialObject.write("G1 Y1 F600")
+            self.serialObject.read_line()
         elif axis == 'yDown':
             print("moving y axis down")
+            self.serialObject.write("G1 Y0 F600")
+            self.serialObject.read_line()
         elif axis == 'platRight':
             print("moving platform right")
+            self.serialObject.write("G1 Z01 F600")
+            self.serialObject.read_line()
         elif axis == 'platLeft':
             print("moving platform left")
+            self.serialObject.write("G1 Z-01 F600")
+            self.serialObject.read_line()
         else:
             print("axis un-identified")
 
-    def connect_machine(self):
-        """connects the machine to the serial port, if selected"""
-        port = self.comboBox_Ports.currentText()
-        try:
-            self.label_port.setText(port)
-        except NameError:
-            pass
-        serial_port = serial.Serial(port, BAUD)
-        try:
-            # wake up the serial
-            serial_port.write(("\n\r\n\r\n\r".encode()))
-            time.sleep(3)
-            startup_data = serial_port.readline()
-        except serial.serialutil.SerialException as e:
-            print(e.errno)
-            print(e)
-        # check for startup data on the serial
-        if serial_port.isOpen():
-            self.label_machine_status.setText("IS_CONNECTED")
-            IS_CONNECTED = 1
-            print("* DBG, data on serial, flushing...")
-            serial_port.flushInput()
-        else:
-            serial_port.close()
-            print("* DBG, serial port not found, closing...")
+    def emergency_stop(self):
+        self.serialObject.write("M112")
+        print(">    emergency stop sent")
+        self.SerialObject.close()
 
-
-    def list_serial_ports(self):
-        """Enumerates USB serial comm. ports and
-        adds them to the combobox for selection
-        """
-        IS_CONNECTED = [port.device for port in serial.tools.list_ports.comports()]
-        IS_CONNECTED = list(IS_CONNECTED)
-        if len(IS_CONNECTED) > 1:
-            # update combo box with serial device list
-            serial_devices = [
-                self.tr(IS_CONNECTED[0]),
-                self.tr(IS_CONNECTED[1]),
-            ]
-            self.comboBox_Ports.addItems(serial_devices)
-        else:
-            self.comboBox_Ports.clear()
-
+    def dc_serial(self):
+        self.serialObject.close()
 
     def dc_and_exit(self):
-        #s.close()
+        self.serialObject.close()
         sys.exit()
 
 
@@ -207,8 +271,6 @@ class ApplicationActions():
     """generalized application controls and handlers"""
     def exit():
         sys.exit(app.exec_())
-
-
 
 def main():
     app = QApplication(sys.argv)
