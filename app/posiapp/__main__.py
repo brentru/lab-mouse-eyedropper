@@ -33,7 +33,7 @@ class SerCtrl:
         print(">    opening serial...")
         try:
             self.ser.open()
-            print(">    serial connect opened")
+            print(">    serial connection opened")
         except:
             print(">    ERROR: serial not opened")
 
@@ -57,7 +57,7 @@ class SerCtrl:
     def read_line(self):
         """reads line of data from serial, prevents blocking"""
         line = self.ser.readline()
-        print(">    Serial: ", line.decode())
+        print(">    serial: ", line.decode())
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -71,13 +71,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.conn_btn_axis()
         # connect control buttons
         self.connect_btns_controls()
-
         # create a serial object
         self.serialObject = SerCtrl()
         self.serialObject.open()
         self.serialObject.write("\n\r\n\r\n")
         time.sleep(3)
         self.serialObject.read_line()
+        # setup rel. positioning
         self.serialObject.write("G91")
 
 
@@ -95,8 +95,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pass
         self.screenshot = cv2.flip(self.screenshot, 1)
         self.label_display(self.screenshot, 1)
-
-
         # TODO: change imwrite to take in datetime + camera used
         curr_time = time.localtime()
         cv2.imwrite("camera.png", self.screenshot)
@@ -158,6 +156,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cv2.line(self.image, (0, int(image_y-150)), (image_x, int(image_y-150)), (255, 50, 50), 10, 1)
         self.label_display(self.image, 1)
 
+
     def update_frame_2(self):
         """CAM2: starts capture, every (timer)ms"""
         ret, self.image = self.cam2_capture.read()
@@ -197,9 +196,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def connect_btns_controls(self):
         """connects non-axis-specific buttons to slots"""
         # serial-based buttons
-        self.btn_quit.clicked.connect(self.dc_and_exit)
+        self.btn_disconnect.clicked.connect(lambda: self.dc_and_exit(0))
+        self.btn_quit.clicked.connect(lambda: self.dc_and_exit(1))
         self.btn_estop.clicked.connect(self.emergency_stop)
-        self.btn_disconnect.clicked.connect(self.dc_serial)
+        self.btn_disable_steppers.clicked.connect(self.disable_steppers)
         # vision system: camera 1
         self.btn_cam1_start.clicked.connect(lambda: self.start_webcam(1))
         self.btn_cam1_pause.clicked.connect(lambda: self.pause_webcam(1))
@@ -208,6 +208,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_cam2_start.clicked.connect(lambda: self.start_webcam(2))
         self.btn_cam2_pause.clicked.connect(lambda: self.pause_webcam(2))
         self.btn_cam2_screenshot.clicked.connect(lambda: self.take_screenshot(2))
+        # preset-buttons
+        self.btn_ps1_set.clicked.connect(lambda: self.get_position(1))
+        self.btn_ps2_set.clicked.connect(lambda: self.get_position(2))
+        self.btn_ps3_set.clicked.connect(lambda: self.get_position(3))
+
 
     def conn_btn_axis(self):
         """connects axis-specific buttons to slots"""
@@ -254,23 +259,60 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             print("axis un-identified")
 
+
+    def disable_steppers(self):
+        """disables all steppers"""
+        self.serialObject.write("M18")
+        print(">    steppers disabled")
+
+
+    def get_position(self, preset):
+        """gets machine position for presets"""
+        if preset == 1:
+            self.serialObject.write("M114")
+            self.pre1 = self.serialObject.read_line()
+            print(">    PRESET1: ", self.pre1)
+        elif preset == 2:
+            self.serialObject.write("M114")
+            self.pre2 = self.serialObject.read_line()
+            print(">    PRESET1: ", self.pre2)
+        elif preset == 3:
+            self.serialObject.write("M114")
+            self.pre3 = self.serialObject.read_line()
+            print(">    PRESET1: ", self.pre3)
+
+
     def emergency_stop(self):
-        self.serialObject.write("M112")
-        print(">    emergency stop sent")
+        """stop machine from operating"""
+        print(">    EMERGENCY STOP")
+        self.disable_steppers()
+        # disable ATX power supply
+        self.serialObject.write("M81")
         self.SerialObject.close()
 
+
     def dc_serial(self):
+        """disconnect serial"""
         self.serialObject.close()
 
-    def dc_and_exit(self):
-        self.serialObject.close()
-        sys.exit()
+
+    def dc_and_exit(self, dc):
+        """disconnect serial and/or exit application
+        0: disconnect serial
+        1: dc and exit"""
+        if dc == 0:
+            self.serialObject.close()
+        elif dc == 1:
+            self.serialObject.close()
+            sys.exit()
 
 
 class ApplicationActions():
     """generalized application controls and handlers"""
     def exit():
+        """qt-specific app exit"""
         sys.exit(app.exec_())
+
 
 def main():
     app = QApplication(sys.argv)
