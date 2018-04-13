@@ -226,8 +226,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_platform_right.clicked.connect(lambda: self.move_axis('platRight'))
         self.btn_platform_left.clicked.connect(lambda: self.move_axis('platLeft'))
     # syringe
-        self.btn_syr_out.clicked.connect(lambda: self.move_axis('syrIn'))
-        self.btn_syr_in.clicked.connect(lambda: self.move_axis('syrOut'))
+        self.btn_syr_in.clicked.connect(lambda: self.move_axis('syrIn'))
+        self.btn_syr_out.clicked.connect(lambda: self.move_axis('syrOut'))
 
 
     def move_axis(self, axis):
@@ -254,8 +254,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.serialObject.read_line()
         elif axis == 'platLeft':
             print("moving platform left")
-            self.serialObject.write("G1 Z-01 F600")
+
             self.serialObject.read_line()
+        elif axis == 'syrIn':
+            print("moving syringe towards mouse")
+            self.serialObject.write("G91")
+            self.serialObject.write("G1 E1.0 F20")
+            self.serialObject.write("G90")
+        elif axis == 'syrOut':
+            print("moving syringe away from mouse")
+            self.serialObject.write("G91")
+            self.serialObject.write("G1 E-1.0 F20")
+            self.serialObject.read_line()
+            self.serialObject.write("G90")
         else:
             print("axis un-identified")
 
