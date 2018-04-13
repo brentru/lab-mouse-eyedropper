@@ -2,6 +2,7 @@ import sys
 import time
 import cv2
 import serial
+import threading
 from serial import SerialException
 import serial.tools.list_ports
 from PyQt5.QtCore import QTimer, QThread
@@ -15,7 +16,7 @@ IS_CONNECTED = 0
 
 class SerCtrl:
     """PySerial communication"""
-    def __init__(self, baudrate=250000, timeout=5):
+    def __init__(self, baudrate=250000, timeout=0):
         port_list = [port.device for port in serial.tools.list_ports.comports()]
         print(">    serial ports: ", port_list)
         # set up serial
@@ -59,6 +60,20 @@ class SerCtrl:
         line = self.ser.readline()
         print(">    serial: ", line.decode())
 
+    def flush_serial(self, inout=None):
+        """flushes serial buffer input or output
+        @param int inout:
+        0: flushes output
+        1: flushes input"""
+        if inout == 0:
+            print(">    flushing output")
+            self.ser.flushOutput
+        elif inout == 1:
+            print(">    flushing input")
+            self.ser.flushInput
+        else:
+            print(">    ERROR: flush command not supported")
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -76,10 +91,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.serialObject.open()
         self.serialObject.write("\n\r\n\r\n")
         time.sleep(3)
+        self.serialObject.flush_serial(1)
         self.serialObject.read_line()
         # setup rel. positioning
         self.serialObject.write("G91")
-
 
 
     def take_screenshot(self, camera=0):
@@ -116,10 +131,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def start_webcam(self, camera=0):
         """ camera capture setup and configuration
-        @int camera: 0 = off, 1 = cam1, 2 = cam2
+        @int camera: 0 = dino-lite
         """
         if camera == 1:
-            self.cam1_capture = cv2.VideoCapture(1)
+            self.cam1_capture = cv2.VideoCapture(0)
             self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
             self.lbl_cam_1_activity.setText("LIVE")
@@ -212,6 +227,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_ps1_set.clicked.connect(lambda: self.get_position(1))
         self.btn_ps2_set.clicked.connect(lambda: self.get_position(2))
         self.btn_ps3_set.clicked.connect(lambda: self.get_position(3))
+        # debug system
 
 
     def conn_btn_axis(self):
@@ -234,27 +250,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """identifies axis and sends ID to gcode sender"""
         if axis == 'xRight':
             print("moving x axis right")
-            self.serialObject.write("G1 X1 F600")
+            self.serialObject.write("G1 X1 F100")
+            self.serialObject.flush_serial(1)
+            self.serialObject.flush_serial(0)
             self.serialObject.read_line()
         elif axis == 'xLeft':
             print("moving x axis left")
-            self.serialObject.write("G1 X-1 F600")
+            self.serialObject.write("G1 X-1 F100")
             self.serialObject.read_line()
         elif axis == 'yUp':
             print("moving y axis up")
-            self.serialObject.write("G1 Y1 F600")
+            self.serialObject.write("G1 Y1 F100")
             self.serialObject.read_line()
         elif axis == 'yDown':
             print("moving y axis down")
-            self.serialObject.write("G1 Y0 F600")
+            self.serialObject.write("G1 Y0 F100")
             self.serialObject.read_line()
         elif axis == 'platRight':
             print("moving platform right")
-            self.serialObject.write("G1 Z01 F600")
+            self.serialObject.write("G1 Z01 F100")
             self.serialObject.read_line()
         elif axis == 'platLeft':
             print("moving platform left")
-
+            self.serialObject.write("G1 Z-01 F100")
             self.serialObject.read_line()
         elif axis == 'syrIn':
             print("moving syringe towards mouse")
