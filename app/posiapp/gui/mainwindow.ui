@@ -17,7 +17,7 @@
    <bool>true</bool>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QGroupBox" name="groupBox">
+   <widget class="QGroupBox" name="groupBox_xaxis">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -56,7 +56,7 @@
      </layout>
     </widget>
    </widget>
-   <widget class="QGroupBox" name="groupBox_5">
+   <widget class="QGroupBox" name="groupBox_syringe">
     <property name="geometry">
      <rect>
       <x>160</x>
@@ -95,7 +95,10 @@
      </layout>
     </widget>
    </widget>
-   <widget class="QGroupBox" name="groupBox_2">
+   <widget class="QGroupBox" name="groupBox_yaxis">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -147,7 +150,7 @@
      <string>Quit</string>
     </property>
    </widget>
-   <widget class="QGroupBox" name="groupBox_6">
+   <widget class="QGroupBox" name="groupBox_platform">
     <property name="geometry">
      <rect>
       <x>160</x>
@@ -197,8 +200,8 @@
     </property>
     <property name="font">
      <font>
-      <weight>75</weight>
-      <bold>true</bold>
+      <weight>50</weight>
+      <bold>false</bold>
      </font>
     </property>
     <property name="title">
@@ -237,10 +240,10 @@
      </property>
     </widget>
    </widget>
-   <widget class="QGroupBox" name="groupBox_8">
+   <widget class="QGroupBox" name="groupBox_presets">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>170</x>
       <y>210</y>
       <width>111</width>
       <height>101</height>
@@ -248,8 +251,8 @@
     </property>
     <property name="font">
      <font>
-      <weight>75</weight>
-      <bold>true</bold>
+      <weight>50</weight>
+      <bold>false</bold>
      </font>
     </property>
     <property name="title">
@@ -558,19 +561,22 @@
      </property>
     </widget>
    </widget>
-   <widget class="QGroupBox" name="groupBox_3">
+   <widget class="QGroupBox" name="groupBox_comms">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>300</y>
+      <y>310</y>
       <width>161</width>
       <height>161</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <weight>75</weight>
-      <bold>true</bold>
+      <weight>50</weight>
+      <bold>false</bold>
      </font>
     </property>
     <property name="title">
@@ -631,6 +637,68 @@
      </property>
      <property name="text">
       <string>Disconnect Serial</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="groupBox_4">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>310</y>
+      <width>171</width>
+      <height>151</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>61</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Port:</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="comboBox_ports">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>20</y>
+       <width>121</width>
+       <height>31</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_refreshPorts">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>110</y>
+       <width>113</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Refresh Ports</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_connectSerial">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>80</y>
+       <width>131</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Connect Machine</string>
      </property>
     </widget>
    </widget>

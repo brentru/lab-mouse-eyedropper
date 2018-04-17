@@ -13,18 +13,13 @@ from .gui.mainwindow_ui import Ui_MainWindow
 
 # consts
 IS_CONNECTED = 0
+PORTS = False
 
 class SerCtrl:
     """PySerial communication"""
-    def __init__(self, baudrate=250000, timeout=0):
-        port_list = [port.device for port in serial.tools.list_ports.comports()]
-        print(">    serial ports: ", port_list)
-        # set up serial
+    def __init__(self, port = None, baudrate=250000, timeout=0):
         self.ser = serial.Serial()
-        try:
-            self.ser.port = port_list[1]
-        except IndexError:
-            print("serial port out of range")
+        self.ser.port = port
         self.ser.baudrate = baudrate
         print(">    serial connected to ", self.ser.port, "at ", self.ser.baudrate)
         print(self.ser)
@@ -80,20 +75,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """init the main window"""
         super(MainWindow, self).__init__()
         self.setupUi(self)
+        # disable the UI for motor control until serial gets connected
+        self.motor_ui(False)
         # image setup
         self.image = None
         # connect primary axis control buttons
         self.conn_btn_axis()
         # connect control buttons
         self.connect_btns_controls()
-        # create a serial object
-        self.serialObject = SerCtrl()
+
+
+    def connect_serial(self):
+        comboBox_port = self.comboBox_ports.currentText()
+        self.serialObject = SerCtrl(port=comboBox_port)
+        print("serial connected")
         self.serialObject.open()
         self.serialObject.write("\n\r\n\r\n")
         time.sleep(3)
         self.serialObject.flush_serial(1)
         self.serialObject.read_line()
-        # setup rel. positioning
+        self.motor_ui(True)
         self.serialObject.write("G91")
         self.serialObject.write("M81")
 
@@ -229,7 +230,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_ps1_set.clicked.connect(lambda: self.get_position(1))
         self.btn_ps2_set.clicked.connect(lambda: self.get_position(2))
         self.btn_ps3_set.clicked.connect(lambda: self.get_position(3))
-        # debug system
+        # serial comm buttons
+        self.btn_refreshPorts.clicked.connect(self.listSerialPorts)
+        self.btn_connectSerial.clicked.connect(self.connect_serial)
 
 
     def conn_btn_axis(self):
@@ -295,9 +298,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ATX PSU commands"""
         if psu_on:
             self.serialObject.write("M80")
+            self.lbl_power.setText("ON")
             print(">    turned on PSU")
         else:
             self.serialObject.write("M81")
+            self.lbl_power.setText("ON")
             print(">    turned off PSU")
 
 
@@ -330,6 +335,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.power_functions(0)
 
 
+    def listSerialPorts(self):
+        """"enumerates serial ports and adds them to qtui combo box"""
+        ports = [port.device for port in serial.tools.list_ports.comports()]
+        port_list = list(ports)
+        if len(port_list) > 1:
+            serial_devices = [
+            self.tr(port_list[0]),
+            self.tr(port_list[1]),
+            ]
+            self.comboBox_ports.addItems(serial_devices)
+            PORTS_AVAIL = True
+        else:
+            self.comboBox_ports.clear()
+            PORTS_AVAIL = False
+
+
+    def motor_ui(self, isEnabled=None):
+        """ disables/enables the motor control ui elements
+        bool isEnabled"""
+        self.groupBox_xaxis.setEnabled(isEnabled)
+        self.groupBox_yaxis.setEnabled(isEnabled)
+        self.groupBox_platform.setEnabled(isEnabled)
+        self.groupBox_syringe.setEnabled(isEnabled)
+        self.groupBox_comms.setEnabled(isEnabled)
+        self.groupBox_presets.setEnabled(isEnabled)
+        self.btn_estop.setEnabled(isEnabled)
 
 
     def dc_serial(self):
