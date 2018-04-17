@@ -95,6 +95,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.serialObject.read_line()
         # setup rel. positioning
         self.serialObject.write("G91")
+        self.serialObject.write("M81")
 
 
     def take_screenshot(self, camera=0):
@@ -215,6 +216,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_quit.clicked.connect(lambda: self.dc_and_exit(1))
         self.btn_estop.clicked.connect(self.emergency_stop)
         self.btn_disable_steppers.clicked.connect(self.disable_steppers)
+        self.btn_power.clicked.connect(lambda: self.power_functions(True))
         # vision system: camera 1
         self.btn_cam1_start.clicked.connect(lambda: self.start_webcam(1))
         self.btn_cam1_pause.clicked.connect(lambda: self.pause_webcam(1))
@@ -289,6 +291,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print("axis un-identified")
 
 
+    def power_functions(self, psu_on=None):
+        """ATX PSU commands"""
+        if psu_on:
+            self.serialObject.write("M80")
+            print(">    turned on PSU")
+        else:
+            self.serialObject.write("M81")
+            print(">    turned off PSU")
+
+
     def disable_steppers(self):
         """disables all steppers"""
         self.serialObject.write("M18")
@@ -315,9 +327,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """stop machine from operating"""
         print(">    EMERGENCY STOP")
         self.disable_steppers()
-        # disable ATX power supply
-        self.serialObject.write("M81")
-        self.SerialObject.close()
+        self.power_functions(0)
+
+
 
 
     def dc_serial(self):
