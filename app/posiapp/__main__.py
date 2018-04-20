@@ -1,3 +1,25 @@
+# The MIT License (MIT)
+# Copyright (c) 2018 brentru
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+# OR OTHER DEALINGS IN THE SOFTWARE.
+
+
 import sys
 import time
 import cv2
@@ -8,7 +30,6 @@ import serial.tools.list_ports
 from PyQt5.QtCore import QTimer, QThread
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow
-
 from .gui.mainwindow_ui import Ui_MainWindow
 
 # consts
@@ -97,6 +118,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.motor_ui(True)
         self.serialObject.write("G91")
         self.serialObject.write("M81")
+        # set the labels
+        self.lbl_serial_status.setText("Connected")
+        self.lbl_serial_status.repaint()
 
 
     def take_screenshot(self, camera=0):
@@ -112,9 +136,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pass
         self.screenshot = cv2.flip(self.screenshot, 1)
         self.label_display(self.screenshot, 1)
-        # TODO: change imwrite to take in datetime + camera used
         curr_time = time.localtime()
-        cv2.imwrite("camera.png", self.screenshot)
+        file_name = 'camera1' + '-' + str(curr_time.tm_year) + '-' + str(curr_time.tm_mon) + str(curr_time.tm_sec) +'.png'
+        cv2.imwrite(file_name, self.screenshot)
+        time.sleep(3)
         print('-- screenshot captured')
 
 
@@ -123,6 +148,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if webcam == 1:
             self.timer1.stop()
             self.cam1_capture.release()
+            self.lbl_cam_1_activity.setText("IDLE")
+            self.lbl_cam_1_activity.repaint()
         elif webcam == 2:
             self.timer2.stop()
             self.cam2_capture.release()
@@ -140,6 +167,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.cam1_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
             self.lbl_cam_1_activity.setText("LIVE")
+            self.lbl_cam_1_activity.repaint()
             self.timer1 = QTimer(self)
             print('--started timer1')
             self.timer1.timeout.connect(self.update_frame)
@@ -214,7 +242,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """connects non-axis-specific buttons to slots"""
         # serial-based buttons
         self.btn_disconnect.clicked.connect(lambda: self.dc_and_exit(0))
-        self.btn_quit.clicked.connect(lambda: self.dc_and_exit(1))
+        self.btn_quit.clicked.connect(lambda: self.dc_and_exit(3))
         self.btn_estop.clicked.connect(self.emergency_stop)
         self.btn_disable_steppers.clicked.connect(self.disable_steppers)
         self.btn_power.clicked.connect(lambda: self.power_functions(True))
@@ -370,12 +398,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def dc_and_exit(self, dc):
         """disconnect serial and/or exit application
-        0: disconnect serial
-        1: dc and exit"""
+        0: disconnect serial only
+        1: dc and exit
+        2: exit only"""
         if dc == 0:
             self.serialObject.close()
         elif dc == 1:
             self.serialObject.close()
+            sys.exit()
+        elif dc == 3:
             sys.exit()
 
 
