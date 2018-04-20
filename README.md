@@ -30,9 +30,14 @@ pySerial Installation:
 
 *note*: the following instructions take place within `/lab-mouse-eyedropper/app`
 
-**Build the UI:**
-run `python3 setup.py build_ui`
-then, run `pip3 install -e .`
+
+**Build the UI (macOS/Unix):**
+run `python setup.py build_ui`
+then, run `pip install -e .`
+
+**Build the UI (Windows):**
+run `$ pyuic5 -x posiapp/gui/mainwindow.ui -o posiapp/gui/mainwindow_ui.py`
+then, run `pip install -e .`
 
 **Launch the  application:**
-run: `python3 -m posiapp`
+run: `python -m posiapp`
