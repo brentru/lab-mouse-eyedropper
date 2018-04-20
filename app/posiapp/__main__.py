@@ -45,6 +45,7 @@ class SerCtrl:
         print(">    serial connected to ", self.ser.port, "at ", self.ser.baudrate)
         print(self.ser)
 
+
     def open(self):
         """opens the serial port"""
         print(">    opening serial...")
@@ -54,10 +55,12 @@ class SerCtrl:
         except:
             print(">    ERROR: serial not opened")
 
+
     def close(self):
         """safely close the serial port"""
         self.ser.close()
         print(">    serial closed")
+
 
     def write(self, data):
         """send encoded data"""
@@ -75,6 +78,7 @@ class SerCtrl:
         """reads line of data from serial, prevents blocking"""
         line = self.ser.readline()
         print(">    serial: ", line.decode())
+
 
     def flush_serial(self, inout=None):
         """flushes serial buffer input or output
@@ -153,8 +157,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif webcam == 2:
             self.timer2.stop()
             self.cam2_capture.release()
+            self.lbl_cam2_activity.setText("IDLE")
+            self.lbl_cam2_activity.repaint()
         else:
-            print('cam not recognized')
+            print('>    cam not recognized')
             pass
 
 
@@ -169,15 +175,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.lbl_cam_1_activity.setText("LIVE")
             self.lbl_cam_1_activity.repaint()
             self.timer1 = QTimer(self)
-            print('--started timer1')
+            print('>    started timer1')
             self.timer1.timeout.connect(self.update_frame)
             self.timer1.start(250)
         elif camera == 2:
-            self.cam2_capture = cv2.VideoCapture(2)
+            self.cam2_capture = cv2.VideoCapture(1)
             self.cam2_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.cam2_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
-            #self.lbl_cam_2_activity.setText("LIVE")
+            self.lbl_cam2_activity.setText("LIVE")
+            self.lbl_cam2_activity.repaint()
             self.timer2 = QTimer(self)
+            print('>    started timer2')
             self.timer2.timeout.connect(self.update_frame_2)
             self.timer2.start(250)
         else:
