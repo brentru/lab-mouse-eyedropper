@@ -336,9 +336,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.serialObject.write("M80")
             self.lbl_power.setText("ON")
             print(">    turned on PSU")
+            print(">    homing X, Y, Z")
+            self.serialObject.write("G28 X Y Z")
         else:
             self.serialObject.write("M81")
-            self.lbl_power.setText("ON")
+            self.lbl_power.setText("OFF")
             print(">    turned off PSU")
 
 
@@ -366,7 +368,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def emergency_stop(self):
         """stop machine from operating"""
-        print(">    EMERGENCY STOP")
+        print(">    !!! EMERGENCY STOP !!!")
+        print(">    trying to home X, Y, Z")
+        self.serialObject.write("G28 X Y Z")
+        print(">    disabling steppers and turning off power")
         self.disable_steppers()
         self.power_functions(0)
 
@@ -400,7 +405,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def dc_serial(self):
-        """disconnect serial"""
+        """disconnect serial object"""
         self.serialObject.close()
 
 
